@@ -1,17 +1,31 @@
 package com.clinicalprediction.backend.api;
 
+
+import java.util.List;
+
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.web.client.RestTemplateBuilder;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.client.RestTemplate;
+
+import com.clinicalprediction.backend.dto.FeedbackRequest;
 import com.clinicalprediction.backend.dto.PredictionRequest;
 import com.clinicalprediction.backend.dto.PredictionResponse;
 import com.clinicalprediction.backend.model.PredictionRecord;
 import com.clinicalprediction.backend.repo.PredictionRepository;
 
 import jakarta.validation.Valid;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
-import org.springframework.boot.web.client.RestTemplateBuilder;
-import org.springframework.web.client.RestTemplate;
+
+
 
 @RestController
 @RequestMapping("/api")
@@ -65,7 +79,14 @@ public class PredictionController {
         repo.save(rec);
 
         // 3) return the ML response to the client
-        return mlOut;
+        return new PredictionResponse(
+            rec.getId(),
+            mlOut.prediction(),
+            mlOut.probability(),
+            mlOut.threshold(),
+            mlOut.model()
+        );
+
     }
 
     @PostMapping(value = "/explain", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
@@ -77,4 +98,31 @@ public class PredictionController {
                 Object.class
         );
     }
+
+    @GetMapping("/predictions")
+    public List<PredictionRecord> getRecentPredictions() {
+    return repo.findAll(PageRequest.of(0, 20, Sort.by(Sort.Direction.DESC, "createdAt"))).getContent();
+    }
+
+    @GetMapping("/predictions/{id}")
+    public ResponseEntity<PredictionRecord> getPredictionById(@PathVariable Long id) {
+    return repo.findById(id)
+            .map(ResponseEntity::ok)
+            .orElse(ResponseEntity.notFound().build());
+    }
+
+    @PostMapping("/feedback")
+    public ResponseEntity<String> submitFeedback(@RequestBody FeedbackRequest feedback) {
+        Long id = feedback.getPredictionId();
+        String message = feedback.getMessage();
+
+        return repo.findById(id)
+            .map(record -> {
+                record.setFeedback(message);
+                repo.save(record);
+                return ResponseEntity.ok("Feedback saved.");
+            })
+            .orElse(ResponseEntity.notFound().build());
+    }
+
 }

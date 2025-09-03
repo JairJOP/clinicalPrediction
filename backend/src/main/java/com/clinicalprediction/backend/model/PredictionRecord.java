@@ -31,6 +31,10 @@ public class PredictionRecord {
     private Double threshold;
     private String model;
 
+    @Column(columnDefinition = "TEXT")
+    private String feedback;
+
+
     private Instant createdAt;
 
     public PredictionRecord() {}
@@ -89,6 +93,14 @@ public class PredictionRecord {
 
     public String getModel() { return model; }
     public void setModel(String model) { this.model = model; }
+
+    public String getFeedback() {
+    return feedback;
+    }
+
+    public void setFeedback(String feedback) {
+        this.feedback = feedback;
+    }
 
     public Instant getCreatedAt() { return createdAt; }
     public void setCreatedAt(Instant createdAt) { this.createdAt = createdAt; }
