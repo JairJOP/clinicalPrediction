@@ -43,8 +43,8 @@ public class PredictionControllerTest {
 
     @Test
     void testPredict() throws Exception {
-        PredictionRequest request = new PredictionRequest(25, "male", 1,1,1,1,1,1,1,1,1);
-        PredictionResponse response = new PredictionResponse(1, 0.999, 0.25, "logreg");
+        PredictionRequest request = new PredictionRequest(25, "male", 1,1,1,1,1,1,1,1,1, "logreg");
+        PredictionResponse response = new PredictionResponse(123L, 1, 0.999, 0.25, "logreg");
 
         Mockito.when(rest.postForObject(Mockito.anyString(), Mockito.any(), Mockito.eq(PredictionResponse.class)))
                 .thenReturn(response);
@@ -62,7 +62,7 @@ public class PredictionControllerTest {
     @Test
     void testExplain() throws Exception {
         // Mock request (same as predict)
-        PredictionRequest request = new PredictionRequest(25, "male", 1, 1, 1, 1, 1, 1, 1, 1, 1);
+        PredictionRequest request = new PredictionRequest(25, "male", 1, 1, 1, 1, 1, 1, 1, 1, 1, "logreg");
 
         // Mock explanation response (can be anything we assume JSON object)
         Object explainResponse = new Object() {

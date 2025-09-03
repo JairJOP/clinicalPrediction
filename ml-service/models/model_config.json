@@ -13,5 +13,7 @@
     "thoughts_that_you_would_be_better_off_dead_or_thoughts_of_hurting_yourself_in_some_way",
     "age_z",
     "gender_Male"
-  ]
+  ],
+  "age_mean": null,
+  "age_std": null
 }

@@ -106,16 +106,33 @@ def health():
 def predict():
     try:
         data = request.get_json(force=True)
+        model_name = data.get("model", "logreg")  # <-- use selected model
+        model_bundle_path = MODELS / f"{model_name}_model.joblib"
+        if not model_bundle_path.exists():
+            raise ValueError(f"Model '{model_name}' not available")
+
+        bundle = joblib.load(model_bundle_path)
+        model = bundle["model"]
+        features = bundle["features"]
+        threshold = float(bundle.get("threshold", 0.5))
+
         data = normalise_payload(data)
         X = to_dataframe(data)
+
         if hasattr(model, "predict_proba"):
             proba = float(model.predict_proba(X)[:, 1][0])
         else:
             proba = float(model.decision_function(X)[0])
         pred = int(proba >= threshold)
-        return jsonify({"prediction": pred, "probability": proba, "threshold": threshold, "model": model_name})
+        return jsonify({
+            "prediction": pred,
+            "probability": proba,
+            "threshold": threshold,
+            "model": model_name
+        })
     except Exception as e:
         return jsonify({"error": str(e)}), 400
+
 
 @app.post("/explain")
 def explain():
@@ -140,6 +157,19 @@ def explain():
         return jsonify({"top_features": top})
     except Exception as e:
         return jsonify({"error": str(e)}), 400
+
+@app.get("/metrics")
+def metrics():
+    try:
+        model_name = request.args.get("model", "logreg")
+        metrics_path = MODELS / f"{model_name}_metrics.json"
+        if not metrics_path.exists():
+            return jsonify({"error": f"Metrics for model '{model_name}' not found"}), 404
+        with open(metrics_path) as f:
+            metrics = json.load(f)
+        return jsonify(metrics)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=8000, debug=True)

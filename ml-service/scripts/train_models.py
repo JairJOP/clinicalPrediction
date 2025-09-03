@@ -176,7 +176,7 @@ config = {"model_name": best_name, "threshold": best_t, "features": feature_name
 with open(OUT_DIR / "model_config.json", "w") as f:
     json.dump(config, f, indent=2)
 
-# (optional) save the full threshold sweep table
+# save the full threshold sweep table
 ts.to_csv(OUT_DIR / f"{best_name}_threshold_sweep.csv", index=False)
 
 # -------------------
@@ -188,6 +188,33 @@ with open(OUT_DIR / f"{best_name}_metrics.json", "w") as f:
         "test_default": metrics,   # using 0.5 threshold
         "test_tuned": metrics_tuned  # using best_t
     }, f, indent=2)
+
+for name, model in models.items():
+    print(f"\n🚀 Training & evaluating: {name}")
+    model.fit(X_train, y_train)
+
+    # Save model
+    joblib.dump({
+        "model": model,
+        "features": feature_names,
+        "threshold": best_t  # Use same threshold for consistency
+    }, OUT_DIR / f"{name}_model.joblib")
+    print(f"✅ Saved model → {name}_model.joblib")
+
+    # Evaluate default
+    metrics, y_pred, y_proba = evaluate(model, X_test, y_test)
+
+    # Evaluate tuned
+    metrics_tuned = evaluate_with_threshold(y_test, y_proba, best_t)
+
+    # Save metrics JSON
+    with open(OUT_DIR / f"{name}_metrics.json", "w") as f:
+        json.dump({
+            "cv": cv_results[name],
+            "test_default": metrics,
+            "test_tuned": metrics_tuned
+        }, f, indent=2)
+    print(f"📊 Saved metrics → {name}_metrics.json")
 
 
 # -------------------
@@ -230,12 +257,6 @@ config = {
 with open(OUT_DIR / "model_config.json", "w") as f:
     json.dump(config, f, indent=2)
 
-# -------------------
-# Save best model + metadata
-# -------------------
-model_path = OUT_DIR / f"{best_name}_model.joblib"
-joblib.dump({"model": best_model, "features": feature_names}, model_path)
-print(f"\n Saved model → {model_path}")
 
 # -------------------
 # SHAP explainer (modern API) + save values for test set

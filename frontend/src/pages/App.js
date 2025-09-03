@@ -1,22 +1,34 @@
 // src/pages/App.js
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import PHQForm from "../components/PHQForm";
 import ShapChart from "../components/ShapChart";
-import { sendPrediction, sendFeedback, getExplanation } from "../services/api";
+import { sendPrediction, sendFeedback, getExplanation, getModelMetrics} from "../services/api";
 
 const App = () => {
   const [result, setResult] = useState(null);
   const [feedback, setFeedback] = useState("");
   const [shapData, setShapData] = useState(null);
+  const [modelMetrics, setModelMetrics] = useState(null);
+  const [selectedModel, setSelectedModel] = useState("");
+
+  useEffect(() => {
+    if (selectedModel) {
+      getModelMetrics(selectedModel)
+        .then((data) => setModelMetrics(data))
+        .catch((err) => console.error("Failed to load model metrics", err));
+    }
+  }, [selectedModel]);
 
   const handlePredict = async (formData) => {
     try {
       const res = await sendPrediction(formData);
       setResult(res.data);
+      setSelectedModel(res.data.model);
 
       // Fetch SHAP explanation
       const shapRes = await getExplanation(formData);
       setShapData(shapRes.data.top_features); // expected shape from backend
+
     } catch (error) {
       console.error("Prediction or explanation failed", error);
       alert("Prediction failed. Check backend/Flask server.");
@@ -35,6 +47,12 @@ const App = () => {
       console.error("Feedback error", error);
       alert("Error submitting feedback");
     }
+  };
+
+  const modelLabels = {
+    logreg: "Logistic Regression",
+    rf: "Random Forest",
+    xgb: "XGBoost"
   };
 
   return (
@@ -57,7 +75,7 @@ const App = () => {
                 <h4 className="card-title">Prediction Result</h4>
                 <p><strong>Outcome:</strong> {result.prediction === 1 ? "Depression" : "No Depression"}</p>
                 <p><strong>Confidence:</strong> {(result.probability * 100).toFixed(2)}%</p>
-                <p><strong>Model:</strong> {result.model}</p>
+                <p><strong>Model:</strong> {modelLabels[result.model] || result.model}</p>
 
                 {/* SHAP Explanation */}
                 {shapData && (
@@ -66,6 +84,22 @@ const App = () => {
                     <ShapChart data={shapData} />
                   </>
                 )}
+
+                {modelMetrics && modelMetrics.test_tuned && modelMetrics.cv && (
+                <div className="mt-4">
+                  <h5>Model Evaluation Metrics</h5>
+
+                  <p><strong>Test Accuracy:</strong> {modelMetrics.test_tuned.accuracy.toFixed(3)}</p>
+                  <p><strong>Precision:</strong> {modelMetrics.test_tuned.precision.toFixed(3)}</p>
+                  <p><strong>Recall:</strong> {modelMetrics.test_tuned.recall.toFixed(3)}</p>
+                  <p><strong>F1 Score:</strong> {modelMetrics.test_tuned.f1.toFixed(3)}</p>
+                  <p><strong>ROC AUC:</strong> {modelMetrics.test_tuned.roc_auc.toFixed(3)}</p>
+
+                  <p className="mt-3">
+                    <strong>CV AUC:</strong> {modelMetrics.cv.roc_auc_mean.toFixed(3)} ± {modelMetrics.cv.roc_auc_std.toFixed(3)}
+                  </p>
+                </div>
+              )}
 
                 {/* Feedback Section */}
                 <div className="mt-4">

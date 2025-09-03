@@ -6,4 +6,5 @@ public record PredictionResponse(
     double probability,
     double threshold,
     String model
+    
 ) {}

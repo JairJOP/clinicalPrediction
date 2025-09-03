@@ -5,6 +5,7 @@ const PHQForm = ({ onSubmit }) => {
     age: "",
     gender: "",
     phq: Array(9).fill(""),
+    model: "",
   });
 
   const handleChange = (e, index = null) => {
@@ -37,6 +38,7 @@ const PHQForm = ({ onSubmit }) => {
       phq7: parseInt(inputs.phq[6]),
       phq8: parseInt(inputs.phq[7]),
       phq9: parseInt(inputs.phq[8]),
+      model: inputs.model,
     };
 
     onSubmit(payload);
@@ -55,6 +57,22 @@ const PHQForm = ({ onSubmit }) => {
           <option value="">-- Select --</option>
           <option value="male">Male</option>
           <option value="female">Female</option>
+        </select>
+      </div>
+
+      <div className="mb-3">
+        <label>Model:</label> 
+        <select
+          name="model"
+          className="form-control"
+          required
+          value={inputs.model}
+          onChange={handleChange}
+        >
+          <option value="">-- Select Model --</option>
+          <option value="logreg">Logistic Regression</option>
+          <option value="rf">Random Forest</option>
+          <option value="xgb">XGBoost</option>
         </select>
       </div>
 

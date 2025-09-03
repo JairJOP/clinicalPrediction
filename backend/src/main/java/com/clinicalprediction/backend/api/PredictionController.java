@@ -3,10 +3,12 @@ package com.clinicalprediction.backend.api;
 
 import java.util.List;
 
+import org.springframework.web.server.ResponseStatusException;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.web.client.RestTemplateBuilder;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -51,10 +53,14 @@ public class PredictionController {
     public PredictionResponse predict(@Valid @RequestBody PredictionRequest req) {
         // 1) call the Flask ML service
         PredictionResponse mlOut = rest.postForObject(
-                mlUrl + "/predict",
+                mlUrl + "/predict?model=" + req.model(),
                 req,
                 PredictionResponse.class
         );
+
+        if (mlOut == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_GATEWAY, "ML server returned null response");
+        }
 
         // 2) persist the request+response
         PredictionRecord rec = new PredictionRecord();
@@ -68,24 +74,27 @@ public class PredictionController {
         rec.setPhq6(req.phq6());
         rec.setPhq7(req.phq7());
         rec.setPhq8(req.phq8());
-        rec.setPhq9(req.phq9());
+        rec.setPhq9(req.phq9()); 
+        rec.setModel(req.model());
 
-        if (mlOut != null) {
-            rec.setPrediction(mlOut.prediction());
-            rec.setProbability(mlOut.probability());
-            rec.setThreshold(mlOut.threshold());
-            rec.setModel(mlOut.model());
-        }
-        repo.save(rec);
+    
+        rec.setPrediction(mlOut.prediction());
+        rec.setProbability(mlOut.probability());
+        rec.setThreshold(mlOut.threshold());
+        rec.setModel(mlOut.model());
+        
 
-        // 3) return the ML response to the client
-        return new PredictionResponse(
+        rec = repo.save(rec);
+        mlOut = new PredictionResponse(
             rec.getId(),
             mlOut.prediction(),
             mlOut.probability(),
             mlOut.threshold(),
             mlOut.model()
         );
+
+        // 3) return the ML response to the client
+        return mlOut;
 
     }
 
