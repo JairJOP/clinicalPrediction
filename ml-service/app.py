@@ -75,7 +75,7 @@ if "features" in bundle and bundle["features"]:
     features = bundle["features"]
     model_features = features
 
-# Try to load SHAP explainer (optional)
+# Trying to load SHAP explainer
 explainer = None
 explainer_bundle_path = MODELS / f"{model_name}_shap_explainer.joblib"
 if explainer_bundle_path.exists():

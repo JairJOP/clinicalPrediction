@@ -1,12 +1,3 @@
-# ml-service/scripts/clean_phq9.py
-# Preprocess PHQ-9 Student dataset following the proposal:
-# - Map PHQ-9 Likert text -> numeric 0..3
-# - Handle missing values (mean for numeric, most-frequent for categorical)
-# - Normalise bounded features with min-max; continuous with z-score
-# - One-hot encode categorical (e.g., gender)
-# - Create binary target via PHQ-9 >= 10
-# - Save processed CSVs and a stratified train/test split
-
 import re
 from pathlib import Path
 
@@ -126,7 +117,7 @@ else:
 # --------------------
 # Basic typing & selection
 # --------------------
-# Identify candidate continuous columns (e.g., age if present)
+# Identify candidate continuous columns (eg, age if present)
 continuous_cols = []
 if "age" in df.columns:
     df["age"] = pd.to_numeric(df["age"], errors="coerce")
@@ -158,7 +149,7 @@ for col in categorical_cols:
 # Normalisation
 # - Bounded (PHQ items 0..3): min-max (divide by 3)
 # - PHQ-9 total (0..27): min-max (divide by 27)
-# - Continuous (e.g., age): z-score
+# - Continuous (eg, age): z-score
 # --------------------
 for col in phq_item_cols:
     df[col] = df[col] / 3.0  # 0..1 by design
@@ -182,8 +173,6 @@ if categorical_cols:
 df["depression"] = (df["phq9_total"] >= PHQ_TOTAL_THRESHOLD).astype(int)
 
 # --------------------
-# --------------------
-# Feature selection (updated)
 # We derive the label from PHQ-9 TOTAL, but DO NOT include totals as features.
 # --------------------
 feature_cols = []

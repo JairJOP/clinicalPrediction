@@ -1,7 +1,3 @@
-# ml-service/scripts/train_models.py
-# Train Logistic Regression, Random Forest, XGBoost (+ optional Voting)
-# Evaluate with CV and test set; save best model and SHAP explainer.
-
 from pathlib import Path
 import json
 import joblib
@@ -46,7 +42,7 @@ y_train = train_df["depression"].astype(int)
 X_test = test_df.drop(columns=["depression"])
 y_test = test_df["depression"].astype(int)
 
-# --- safety: drop any total columns if they slipped in ---
+# --- safety: droping any total columns if they slipped in ---
 for col in ("phq9_total", "phq9_total_norm"):
     if col in X_train.columns:
         X_train = X_train.drop(columns=[col])
@@ -197,7 +193,7 @@ for name, model in models.items():
     joblib.dump({
         "model": model,
         "features": feature_names,
-        "threshold": best_t  # Use same threshold for consistency
+        "threshold": best_t  
     }, OUT_DIR / f"{name}_model.joblib")
     print(f"✅ Saved model → {name}_model.joblib")
 
@@ -239,7 +235,7 @@ age_mean = None
 age_std = None
 if "age_z" in feature_names or "age" in feature_names:
     if "age_z" in train_df.columns:
-        # if you created age_z earlier, recover mean/std from original 'age' if available
+        
         if "age" in train_df.columns:
             age_mean = float(train_df["age"].mean())
             age_std  = float(train_df["age"].std(ddof=0))
@@ -263,7 +259,7 @@ with open(OUT_DIR / "model_config.json", "w") as f:
 # -------------------
 print("Building SHAP explainer...")
 try:
-    # Small background for speed if KernelExplainer is chosen under the hood
+    # Small background for speed if KernelExplainer is chosen 
     background = shap.sample(X_train, 200, random_state=42)
     explainer = shap.Explainer(best_model, background, feature_names=feature_names)
 

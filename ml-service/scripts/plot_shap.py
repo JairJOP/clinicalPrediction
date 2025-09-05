@@ -1,6 +1,3 @@
-# ml-service/scripts/plot_shap.py
-# Robust SHAP plotting that avoids beeswarm/summary_plot internals.
-
 from pathlib import Path
 import json
 import joblib
@@ -29,7 +26,7 @@ if sv_bundle_path.exists():
     sv = bundle.get("shap_values", None)
     X_test = bundle.get("X_test", None)
 else:
-    # Fallback: try explainer + background (will be slower, but good enough to plot)
+    # Fallback: try explainer + background
     expl_path  = MODELS_DIR / f"{MODEL_NAME}_shap_explainer.joblib"
     model_path = MODELS_DIR / f"{MODEL_NAME}_model.joblib"
     if not (expl_path.exists() and model_path.exists()):
@@ -42,7 +39,7 @@ else:
     if explainer is None or background is None:
         raise RuntimeError("Explainer bundle missing 'explainer' or 'background'.")
     sv = explainer(background)
-    # make a DataFrame for consistent feature names
+    
     X_test = pd.DataFrame(background, columns=FEATURES or None)
 
 # ---------------- Helpers ----------------
@@ -53,7 +50,7 @@ def as_array(obj):
     else:
         arr = obj
     arr = np.asarray(arr)
-    # ensure 2D: (n_samples, n_features)
+   
     if arr.ndim == 1:
         arr = arr.reshape(1, -1)
     return arr
@@ -98,7 +95,7 @@ pd.DataFrame({"feature": feat_names, "mean_abs_shap": mean_abs}).sort_values(
 # Bar chart (global)
 plt.figure(figsize=(10, 6))
 ypos = np.arange(top_k)
-plt.barh(ypos, top_vals)        # no custom colors/styles per your plotting rules
+plt.barh(ypos, top_vals)     
 plt.yticks(ypos, top_feats)
 plt.gca().invert_yaxis()
 plt.xlabel("Mean |SHAP|")
@@ -111,7 +108,6 @@ print(f"Saved: {out_bar}")
 print(f"Saved: {csv_out}")
 
 # ---------------- Instance-level explanation (first row) ----------------
-# If we only have one row, this still works; if multiple, we pick the first.
 inst = np.abs(shap_vals[0])               # (n_features,)
 inst_order = np.argsort(inst)[::-1]
 inst_idx = inst_order[:top_k]

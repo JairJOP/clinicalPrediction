@@ -1,4 +1,3 @@
-// src/pages/App.js
 import React, { useEffect, useState } from "react";
 import PHQForm from "../components/PHQForm";
 import ShapChart from "../components/ShapChart";
